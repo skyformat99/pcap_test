@@ -2,6 +2,21 @@
 
 Reads packet and displays it.
 
+## Install
+
+```
+sudo apt install libpcap*
+git clone https://github.com/0xrgb/pcap_test.git
+cd pcap_test
+make
+```
+
+## Run
+
+```
+sudo ./pcap_test eth0
+```
+
 ## TODO
 
 + ipv4
