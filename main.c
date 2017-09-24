@@ -57,7 +57,7 @@ int pp_packet(bpf_u_int32 len, const char *packet) {
 	printf("Packet length: %5u\n", len);
 
 	/* Is the packet eth? 100% Sure! */
-	/* Let us check src and dest mac address */
+	/* Let's check src and dest MAC address */
 	const struct ether_header *ptr1 = (const struct ether_header*)packet;
 
 	/* src */
@@ -96,7 +96,7 @@ int pp_packet(bpf_u_int32 len, const char *packet) {
 
 void make_readable(char *B, const char *S, uint32_t len) {
 	for (uint32_t i = 0; i < len; ++i) {
-		/* 32 ~ 127 are readable ascii-codes */
+		/* 32 ~ 126 are readable ascii-codes */
 		if (32 <= S[i] && S[i] <= 126) {
 			B[i] = S[i];
 		} else {
