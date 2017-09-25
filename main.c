@@ -5,7 +5,7 @@
 #include <arpa/inet.h> /* Using ntohs, ... */
 #include <pcap.h> /* libpcap: need -lpcap option */
 
-#include <netinet/if_ether.h> /* Using struct ether_header */
+#include "net_struct.h"
 
 /* Prints usage and quit */
 void usage() {
@@ -20,12 +20,12 @@ void error(const char *s, const char *e) {
 }
 
 /* Pretty-print functions */
-void pp_ipv4(void*);
-void pp_eth(const struct ether_header*);
-void pp_packet(bpf_u_int32, const char*);
+void pp_ipv4(const struct ipv4_hdr*);
+void pp_eth(const struct eth_hdr*);
+void pp_packet(bpf_u_int32, const u_char*);
 
 /* Make packet readable */
-void make_readable(char*, const char*, uint32_t);
+void make_readable(uint8_t*, const uint8_t*, uint32_t);
 
 char errbuf[PCAP_ERRBUF_SIZE]; /* pcap error message */
 
@@ -47,60 +47,98 @@ int main(int argc, char *argv[]) {
 		else if (res == -1 || res == -2) break;
 
 		pp_packet(header->caplen, packet);
+		puts("");
 	}
 
 	pcap_close(handle);
 	return 0;
 }
 
-/* Define some network structures */
-/* TODO */
-
 /* Pretty-prints packet data */
-void pp_packet(bpf_u_int32 len, const char *packet) {
+void pp_packet(bpf_u_int32 len, const u_char *packet) {
 	/* Prints length of packet */
 	printf("Packet length: %6u\n", len);
 
 	/* Is the packet eth? 100% Sure! */
 	/* Let's check src and dest MAC address */
-	pp_eth((const struct ether_header*)packet);
+	pp_eth((const struct eth_hdr*)packet);
 }
 
 /* Pretty-prints eth data */
-void pp_eth(const struct ether_header *packet_eth) {
+void pp_eth(const struct eth_hdr *packet_eth) {
+	printf("MAC: ");
 	/* src */
-	for (int i = 0; i < ETHER_ADDR_LEN; ++i) {
-		printf("%02X", packet_eth->ether_shost[i]);
+	for (int i = 0; i < ETH_ALEN; ++i) {
+		printf("%02X", packet_eth->src[i]);
 	}
 	/* dest */
 	printf(" -> ");
-	for (int i = 0; i < ETHER_ADDR_LEN; ++i) {
-		printf("%02X", packet_eth->ether_dhost[i]);
+	for (int i = 0; i < ETH_ALEN; ++i) {
+		printf("%02X", packet_eth->dest[i]);
 	}
+	puts("");
 
 	/* What type is it? */
-	switch (ntohs(packet_eth->ether_type)) {
-	case ETHERTYPE_IP:
+	switch (ntohs(packet_eth->type)) {
+	case ETH_IPV4:
 		/* It is ipv4. */
-		printf("Ether Type: ipv4\n");
-		pp_ipv4(packet_eth); /* TODO */
+		printf("Ethertype: ipv4\n");
+		pp_ipv4((const struct ipv4_hdr*)packet_eth->data); /* TODO */
 		break;
-	case ETHERTYPE_ARP:
+	case ETH_IPV6:
+		/* It is ipv6. */
+		printf("Ethertype: ipv6\n");
+		break;
+	case ETH_ARP:
 		/* It is arp. */
-		printf("Ether Type: arp\n");
+		printf("Ethertype: arp\n");
 		break;
 	default:
-		printf("Ether Type: unknown\n");
+		printf("Ethertype: unknown\n");
 		break;
 	}
 }
 
 /* Pretty-prints ipv4 data */
-void pp_ipv4(void *ptr) {
-	/* TODO */
+void pp_ipv4(const struct ipv4_hdr *packet_ipv4) {
+	printf("IP: ");
+	/* src */
+	for (int i = 0; i < IPV4_ALEN; ++i) {
+		printf("%d.", packet_ipv4->src[i]);
+	}
+	printf(" -> ");
+	/* dest */
+	for (int i = 0; i < IPV4_ALEN; ++i) {
+		printf("%d.", packet_ipv4->dest[i]);
+	}
+	puts("");
+
+	/* Does it has option field? */
+	uint8_t ihl = GET_IHL(packet_ipv4);
+	if (ihl < 20) error("Invalid ipv4 packet!", "IHL < 20");
+	else if (ihl == 20) printf("ipv4 has no option.\n");
+	else printf("ipv4 has options. IHL: %d\n", ihl);
+
+	/* What type is it? */
+	switch (packet_ipv4->protocol) {
+	case IPV4_TCP:
+		printf("ipv4 protocol: tcp\n");
+		/* TODO */
+		break;
+	case IPV4_UDP:
+		printf("ipv4 protocol: udp\n");
+		break;
+	case IPV4_ICMP:
+		printf("ipv4 protocol: icmp\n");
+		break;
+	default:
+		printf("ipv4 protocol: unknown\n");
+		break;
+	}
 }
 
-void make_readable(char *B, const char *S, uint32_t len) {
+/* Make packet readable */
+void make_readable(uint8_t *B, const uint8_t *S, uint32_t len) {
 	for (uint32_t i = 0; i < len; ++i) {
 		/* 32 ~ 126 are readable ascii-codes */
 		if (32 <= S[i] && S[i] <= 126) {
