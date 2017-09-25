@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 /* Pretty-prints packet data */
 void pp_packet(bpf_u_int32 len, const u_char *packet) {
 	/* Prints length of packet */
-	printf("Packet length: %6u\n", len);
+	printf("Packet length: %u\n", len);
 
 	/* Is the packet eth? 100% Sure! */
 	/* Let's check src and dest MAC address */
@@ -104,19 +104,19 @@ void pp_ipv4(const struct ipv4_hdr *packet_ipv4) {
 	printf("IP: ");
 	/* src */
 	for (int i = 0; i < IPV4_ALEN; ++i) {
-		printf("%3d.", packet_ipv4->src[i]);
+		printf("%s%d", (i>0 ? "." : ""), packet_ipv4->src[i]);
 	}
 	printf(" -> ");
 	/* dest */
 	for (int i = 0; i < IPV4_ALEN; ++i) {
-		printf("%d.", packet_ipv4->dest[i]);
+		printf("%s%d", (i>0 ? "." : ""), packet_ipv4->dest[i]);
 	}
 	puts("");
 
 	/* Does it has option field? */
 	uint8_t ihl = IPV4_IHL(packet_ipv4);
 	if (ihl < IPV4_IHL_MIN) error("Invalid ipv4 packet!", "IHL is too small");
-	else if (ihl == IPV4_IHL_MIN) printf("ipv4 has no option.\n");
+	else if (ihl == IPV4_IHL_MIN) printf("ipv4 has no option\n");
 	else printf("ipv4 has options. IHL: %d\n", ihl);
 
 	/* What type is it? */

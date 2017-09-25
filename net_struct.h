@@ -20,7 +20,7 @@ struct eth_hdr {
 
 /* ipv4 */
 #define IPV4_VER(XX) ((uint8_t)(((XX)->VIHL & 0xF0) >> 4))
-#define IPV4_IHL(XX) ((uint8_t)(((XX)->VIHL & 0x0F) << 4))
+#define IPV4_IHL(XX) ((uint8_t)(((XX)->VIHL & 0x0F) << 2))
 
 #define IPV4_IHL_MIN 20
 #define IPV4_ALEN 0x04
