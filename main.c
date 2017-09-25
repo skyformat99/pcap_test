@@ -114,9 +114,9 @@ void pp_ipv4(const struct ipv4_hdr *packet_ipv4) {
 	puts("");
 
 	/* Does it has option field? */
-	uint8_t ihl = GET_IHL(packet_ipv4);
-	if (ihl < 20) error("Invalid ipv4 packet!", "IHL < 20");
-	else if (ihl == 20) printf("ipv4 has no option.\n");
+	uint8_t ihl = IPV4_IHL(packet_ipv4);
+	if (ihl < IPV4_IHL_MIN) error("Invalid ipv4 packet!", "IHL is too small");
+	else if (ihl == IPV4_IHL_MIN) printf("ipv4 has no option.\n");
 	else printf("ipv4 has options. IHL: %d\n", ihl);
 
 	/* What type is it? */
