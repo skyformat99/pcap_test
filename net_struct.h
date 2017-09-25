@@ -20,9 +20,9 @@ struct eth_hdr {
 
 /* ipv4 */
 #define IPV4_VER(XX) ((uint8_t)(((XX)->VIHL & 0xF0) >> 4))
-#define IPV4_IHL(XX) ((uint8_t)(((XX)->VIHL & 0x0F) << 2))
+#define IPV4_HL(XX)  ((uint8_t)(((XX)->VIHL & 0x0F) << 2))
 
-#define IPV4_IHL_MIN 20
+#define IPV4_HL_MIN 20
 #define IPV4_ALEN 0x04
 
 #define IPV4_ICMP 0x01
@@ -57,7 +57,7 @@ struct tcp_hdr {
 	uint16_t wsize;
 	uint16_t checksum;
 	uint16_t urg;
-	uint8_t data[0];
+	uint8_t payload[0];
 } __attribute__((packed));
 
 #endif

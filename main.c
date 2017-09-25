@@ -27,6 +27,7 @@ void pp_tcp(const struct tcp_hdr*, uint16_t length);
 
 /* Make packet readable */
 void make_readable(uint8_t*, const uint8_t*, uint32_t);
+void pp_hex(const uint8_t*, uint32_t);
 
 char errbuf[PCAP_ERRBUF_SIZE]; /* pcap error message */
 
@@ -115,16 +116,16 @@ void pp_ipv4(const struct ipv4_hdr *packet_ipv4) {
 	puts("");
 
 	/* Does it has option field? */
-	uint8_t ihl = IPV4_IHL(packet_ipv4);
-	if (ihl < IPV4_IHL_MIN) error("Invalid ipv4 packet!", "IHL is too small");
-	else if (ihl == IPV4_IHL_MIN) printf("ipv4 has no option\n");
+	uint8_t ihl = IPV4_HL(packet_ipv4);
+	if (ihl < IPV4_HL_MIN) error("Invalid ipv4 packet!", "IHL is too small");
+	else if (ihl == IPV4_HL_MIN) printf("ipv4 has no option\n");
 	else printf("ipv4 has options. IHL: %d\n", ihl);
 
 	/* What type is it? */
 	switch (packet_ipv4->protocol) {
 	case IPV4_TCP:
 		printf("ipv4 protocol: tcp\n");
-		pp_tcp((const struct tcp_hdr*)&packet_ipv4->data[ihl - IPV4_IHL_MIN], ntohs(packet_ipv4->length) - ihl);
+		pp_tcp((const struct tcp_hdr*)&packet_ipv4->data[ihl - IPV4_HL_MIN], ntohs(packet_ipv4->length) - ihl);
 		break;
 	case IPV4_UDP:
 		printf("ipv4 protocol: udp\n");
@@ -139,6 +140,8 @@ void pp_ipv4(const struct ipv4_hdr *packet_ipv4) {
 }
 
 /* Pretty-prints tcp data */
+#define TCP_PAYLOAD_MAXLEN 16
+
 void pp_tcp(const struct tcp_hdr *packet_tcp, uint16_t length) {
 	/* Prints port */
 	printf("PORT: %d -> %d\n", ntohs(packet_tcp->src), ntohs(packet_tcp->dest));
@@ -149,12 +152,22 @@ void pp_tcp(const struct tcp_hdr *packet_tcp, uint16_t length) {
 	else if (hl < TCP_HL_MIN) error("Invalid tcp packet!", "HL is too small");
 	
 	/* Now prints data in tcp */
-	uint8_t S[33];
+	uint8_t S[TCP_PAYLOAD_MAXLEN + 1];
 	uint32_t len = length - hl;
+	
 	printf("TCP length: %u\n", len);
-	if (len > 32) len = 32; /* Cut data if they are too long */
-	make_readable(S, &packet_tcp->data[hl - TCP_HL_MIN], len);
-	printf("Data: %s\n", S);
+	
+	/* Cut payload if they are too long */
+	if (len > TCP_PAYLOAD_MAXLEN) len = TCP_PAYLOAD_MAXLEN;
+	
+	/*
+	make_readable(S, &packet_tcp->payload[hl - TCP_HL_MIN], len);
+	printf("Payload: %s\n", S);
+	*/
+	/* Prints payload as hexademical */
+	printf("Payload: ");
+	pp_hex(&packet_tcp->payload[hl - TCP_HL_MIN], len);
+	puts("");
 }
 
 /* Make packet readable */
@@ -168,4 +181,11 @@ void make_readable(uint8_t *B, const uint8_t *S, uint32_t len) {
 		}
 	}
 	B[len] = '\0';
+}
+
+/* Prints payload as hexademical */
+void pp_hex(const uint8_t *S, uint32_t len) {
+	for (uint32_t i = 0; i < len; ++i) {
+		printf("%s%02X", (i > 0 ? " " : ""), S[i]);
+	}
 }
