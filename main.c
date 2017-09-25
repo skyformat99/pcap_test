@@ -7,19 +7,24 @@
 
 #include <netinet/if_ether.h> /* Using struct ether_header */
 
-/* prints usage and quit */
+/* Prints usage and quit */
 void usage() {
 	puts("Usage: pcap_test <interface>\n");
 	exit(-1);
 }
 
-/* prints error message and quit */
+/* Prints error message and quit */
 void error(const char *s, const char *e) {
 	fprintf(stderr, "%s: %s\n", s, e);
 	exit(-1);
 }
 
-int  pp_packet(bpf_u_int32, const char*);
+/* Pretty-print functions */
+void pp_ipv4(void*);
+void pp_eth(const struct ether_header*);
+void pp_packet(bpf_u_int32, const char*);
+
+/* Make packet readable */
 void make_readable(char*, const char*, uint32_t);
 
 char errbuf[PCAP_ERRBUF_SIZE]; /* pcap error message */
@@ -52,46 +57,47 @@ int main(int argc, char *argv[]) {
 /* TODO */
 
 /* Pretty-prints packet data */
-int pp_packet(bpf_u_int32 len, const char *packet) {
+void pp_packet(bpf_u_int32 len, const char *packet) {
 	/* Prints length of packet */
-	printf("Packet length: %5u\n", len);
+	printf("Packet length: %6u\n", len);
 
 	/* Is the packet eth? 100% Sure! */
 	/* Let's check src and dest MAC address */
-	const struct ether_header *ptr1 = (const struct ether_header*)packet;
+	pp_eth((const struct ether_header*)packet);
+}
 
+/* Pretty-prints eth data */
+void pp_eth(const struct ether_header *packet_eth) {
 	/* src */
-	printf("MAC[src]:");
 	for (int i = 0; i < ETHER_ADDR_LEN; ++i) {
-		printf(" %02X", ptr1->ether_shost[i]);
+		printf("%02X", packet_eth->ether_shost[i]);
 	}
-
 	/* dest */
-	printf(" / MAC[dest]:");
+	printf(" -> ");
 	for (int i = 0; i < ETHER_ADDR_LEN; ++i) {
-		printf(" %02X", ptr1->ether_dhost[i]);
+		printf("%02X", packet_eth->ether_dhost[i]);
 	}
 
-	/* Then, what type is it? */
-	switch (ntohs(ptr1->ether_type)) {
+	/* What type is it? */
+	switch (ntohs(packet_eth->ether_type)) {
 	case ETHERTYPE_IP:
 		/* It is ipv4. */
 		printf("Ether Type: ipv4\n");
+		pp_ipv4(packet_eth); /* TODO */
 		break;
 	case ETHERTYPE_ARP:
 		/* It is arp. */
 		printf("Ether Type: arp\n");
-		return 1;
+		break;
 	default:
 		printf("Ether Type: unknown\n");
-		return 2;
+		break;
 	}
+}
 
-	/* So, the packet is ipv4. */
-	/* Let's check src and dest ip */
-
+/* Pretty-prints ipv4 data */
+void pp_ipv4(void *ptr) {
 	/* TODO */
-	return 3;
 }
 
 void make_readable(char *B, const char *S, uint32_t len) {
