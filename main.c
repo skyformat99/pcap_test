@@ -20,9 +20,10 @@ void error(const char *s, const char *e) {
 }
 
 /* Pretty-print functions */
-void pp_ipv4(const struct ipv4_hdr*);
-void pp_eth(const struct eth_hdr*);
 void pp_packet(bpf_u_int32, const u_char*);
+void pp_eth(const struct eth_hdr*);
+void pp_ipv4(const struct ipv4_hdr*);
+void pp_tcp(const struct tcp_hdr*, uint16_t length);
 
 /* Make packet readable */
 void make_readable(uint8_t*, const uint8_t*, uint32_t);
@@ -83,7 +84,7 @@ void pp_eth(const struct eth_hdr *packet_eth) {
 	case ETH_IPV4:
 		/* It is ipv4. */
 		printf("Ethertype: ipv4\n");
-		pp_ipv4((const struct ipv4_hdr*)packet_eth->data); /* TODO */
+		pp_ipv4((const struct ipv4_hdr*)packet_eth->data);
 		break;
 	case ETH_IPV6:
 		/* It is ipv6. */
@@ -123,7 +124,7 @@ void pp_ipv4(const struct ipv4_hdr *packet_ipv4) {
 	switch (packet_ipv4->protocol) {
 	case IPV4_TCP:
 		printf("ipv4 protocol: tcp\n");
-		/* TODO */
+		pp_tcp((const struct tcp_hdr*)&packet_ipv4->data[ihl - IPV4_IHL_MIN], ntohs(packet_ipv4->length) - ihl);
 		break;
 	case IPV4_UDP:
 		printf("ipv4 protocol: udp\n");
@@ -137,11 +138,30 @@ void pp_ipv4(const struct ipv4_hdr *packet_ipv4) {
 	}
 }
 
+/* Pretty-prints tcp data */
+void pp_tcp(const struct tcp_hdr *packet_tcp, uint16_t length) {
+	/* Prints port */
+	printf("PORT: %d -> %d\n", ntohs(packet_tcp->src), ntohs(packet_tcp->dest));
+	
+	/* Check header length */
+	uint8_t hl = TCP_HL(packet_tcp);
+	if (hl > TCP_HL_MAX) error("Invalid tcp packet!", "HL is too big");
+	else if (hl < TCP_HL_MIN) error("Invalid tcp packet!", "HL is too small");
+	
+	/* Now prints data in tcp */
+	uint8_t S[33];
+	uint32_t len = length - hl;
+	printf("TCP length: %u\n", len);
+	if (len > 32) len = 32; /* Cut data if they are too long */
+	make_readable(S, &packet_tcp->data[hl - TCP_HL_MIN], len);
+	printf("Data: %s\n", S);
+}
+
 /* Make packet readable */
 void make_readable(uint8_t *B, const uint8_t *S, uint32_t len) {
 	for (uint32_t i = 0; i < len; ++i) {
-		/* 32 ~ 126 are readable ascii-codes */
-		if (32 <= S[i] && S[i] <= 126) {
+		/* 32 ~ 126 are readable ascii-codes (32 is space) */
+		if (33 <= S[i] && S[i] <= 126) {
 			B[i] = S[i];
 		} else {
 			B[i] = '.';

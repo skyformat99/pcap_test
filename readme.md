@@ -19,8 +19,7 @@ sudo ./pcap_test eth0
 
 ## TODO
 
-+ ipv4
-+ tcp
++ Refactor codes to enhance readability
 
 ## Issues
 

@@ -44,7 +44,7 @@ struct ipv4_hdr {
 } __attribute__((packed));
 
 /* tcp */
-#define TCP_HL(XX) ((uint8_t)((((uint8_t*)((XX)->DRF))[0] & 0xF0) >> 2))
+#define TCP_HL(XX) ((uint8_t)((((uint8_t*)(&(XX)->DRF))[0] & 0xF0) >> 2))
 #define TCP_HL_MIN 20
 #define TCP_HL_MAX 60
 
