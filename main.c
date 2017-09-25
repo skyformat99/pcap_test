@@ -69,12 +69,12 @@ void pp_eth(const struct eth_hdr *packet_eth) {
 	printf("MAC: ");
 	/* src */
 	for (int i = 0; i < ETH_ALEN; ++i) {
-		printf("%02X", packet_eth->src[i]);
+		printf("%s%02X", (i>0 ? ":" : ""), packet_eth->src[i]);
 	}
 	/* dest */
 	printf(" -> ");
 	for (int i = 0; i < ETH_ALEN; ++i) {
-		printf("%02X", packet_eth->dest[i]);
+		printf("%s%02X", (i>0 ? ":" : ""), packet_eth->dest[i]);
 	}
 	puts("");
 
@@ -104,7 +104,7 @@ void pp_ipv4(const struct ipv4_hdr *packet_ipv4) {
 	printf("IP: ");
 	/* src */
 	for (int i = 0; i < IPV4_ALEN; ++i) {
-		printf("%d.", packet_ipv4->src[i]);
+		printf("%3d.", packet_ipv4->src[i]);
 	}
 	printf(" -> ");
 	/* dest */
